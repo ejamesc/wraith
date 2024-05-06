@@ -7,6 +7,7 @@ EXPECT = $(shell command -v expect 2> /dev/null)
 GHOST = $(shell command -v ghost 2> /dev/null)
 GZIP = $(shell command -v gzip 2> /dev/null)
 MYSQL = $(shell command -v mysql 2> /dev/null)
+TAR = $(shell command -v tar 2> /dev/null)
 RCLONE = $(shell command -v rclone 2> /dev/null)
 
 .DEFAULT_GOAL := help
@@ -24,6 +25,7 @@ check: ## check if all requirements are installed.
 	@if [ -z $(GHOST) ]; then echo "`ghost` could not be found. See https://ghost.org/docs/ghost-cli/"; exit 2; fi
 	@if [ -z $(GZIP) ]; then echo "`gzip` could not be found. See https://www.gnu.org/software/gzip/"; exit 2; fi
 	@if [ -z $(MYSQL) ]; then echo "`mysql` could not be found. See https://dev.mysql.com/doc/"; exit 2; fi
+	@if [ -z $(TAR) ]; then echo "`tar` could not be found."; exit 2; fi
 	@if [ -z $(RCLONE) ]; then curl -s https://rclone.org/install.sh | bash; fi
 	@echo "Passed requirements checks."
 
@@ -35,7 +37,7 @@ setup: check	## setup rclone, ghost backup, and cron.
 	@echo "Setting up wraith..."
 	@cp wraith.example.exp /var/www/ghost/wraith.exp
 	@echo "Setting up a cron job to run at 04:00 on Monday..."
-	@(crontab -l 2>/dev/null; echo "0 4 * * 1 cd ~/wraith/ && USER=ghost-mgr bash backup.sh > /tmp/wraith.log") | crontab -
+	@(crontab -l 2>/dev/null; echo "0 2 * * * cd ~/backup/ && USER=deploy bash backup.sh > /tmp/wraith.log") | crontab -
 	@echo "To run crontab -e to update the backup Cron schedule."
 	@echo "Last action required: update the email and password field in wraith.exp for ghost backup to work."
 

@@ -7,7 +7,8 @@ source util.sh
 TIMESTAMP=$(date +%Y-%m-%d-%H%M)
 GHOST_DIR="/var/www/ghost/"
 GHOST_MYSQL_BACKUP_FILENAME="backup-from-mysql-$TIMESTAMP.sql.gz"
-REMOTE_BACKUP_LOCATION="Ghost Backups/"
+REMOTE_BACKUP_LOCATION="cmcg-backup/"
+BACKUP_TAR_FILENAME="backup-$TIMESTAMP.tar"
 
 # run checks
 pre_backup_checks() {
@@ -19,7 +20,7 @@ pre_backup_checks() {
     log "Running pre-backup checks"
     cd $GHOST_DIR
 
-    cli=("expect" "gzip" "mysql" "mysqldump" "ghost" "rclone")
+    cli=("expect" "gzip" "mysql" "mysqldump" "ghost" "rclone" "tar")
     for c in "${cli[@]}"; do
         check_command_installation "$c"
     done
@@ -37,7 +38,7 @@ backup_ghost_content() {
 # check MySQL connection
 check_mysql_connection() {
     log "Checking MySQL connection..."
-    if ! mysql -u"$mysql_user" -p"$mysql_password" -e ";" &>/dev/null; then
+    if ! mysql -h"$mysql_host" -u"$mysql_user" -p"$mysql_password" -e ";" &>/dev/null; then
         log "Could not connect to MySQL"
         exit 0
     fi
@@ -49,6 +50,7 @@ backup_mysql() {
     log "Backing up MySQL database..."
     cd $GHOST_DIR
 
+    mysql_host=$(ghost config get database.connection.host | tail -n1)
     mysql_user=$(ghost config get database.connection.user | tail -n1)
     mysql_password=$(ghost config get database.connection.password | tail -n1)
     mysql_database=$(ghost config get database.connection.database | tail -n1)
@@ -56,7 +58,7 @@ backup_mysql() {
     check_mysql_connection
 
     log "Dumping MySQL database..."
-    mysqldump -u"$mysql_user" -p"$mysql_password" "$mysql_database" --no-tablespaces | gzip >"$GHOST_MYSQL_BACKUP_FILENAME"
+    mysqldump -h"$mysql_host" -u"$mysql_user" -p"$mysql_password" "$mysql_database" --no-tablespaces | gzip >"$GHOST_MYSQL_BACKUP_FILENAME"
 }
 
 # `rclone` backup
@@ -67,8 +69,11 @@ rclone_to_cloud_storage() {
 
     rclone_remote_name="remote" # TODO: parse from config or prompt
 
-    rclone copy backup-from-*-on-*.zip "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
-    rclone copy "$GHOST_MYSQL_BACKUP_FILENAME" "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
+    tar -cvf $BACKUP_TAR_FILENAME backup-from-*-on-*.zip $GHOST_MYSQL_BACKUP_FILENAME
+
+    # rclone copy backup-from-*-on-*.zip "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
+    # rclone copy "$GHOST_MYSQL_BACKUP_FILENAME" "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
+    rclone copy $BACKUP_TAR_FILENAME "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
 }
 
 # clean up old backups
@@ -79,6 +84,7 @@ clean_up() {
     rm -rf backup/
     rm -f backup-from-*-on-*.zip
     rm -f "$GHOST_MYSQL_BACKUP_FILENAME"
+    rm -f "$BACKUP_TAR_FILENAME"
 }
 
 # main entrypoint of the script
