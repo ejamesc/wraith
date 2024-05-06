@@ -30,7 +30,7 @@ pre_backup_checks() {
 
 # backup Ghost content folder
 backup_ghost_content() {
-    log "Running ghost backup..."
+    log "Running content backup..."
     cd $GHOST_DIR
 
     # expect wraith.exp
