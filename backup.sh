@@ -7,6 +7,7 @@ source util.sh
 TIMESTAMP=$(date +%Y-%m-%d-%H%M)
 GHOST_DIR="/var/www/ghost/"
 GHOST_MYSQL_BACKUP_FILENAME="backup-from-mysql-$TIMESTAMP.sql.gz"
+GHOST_CONTENT_BACKUP_FILENAME="content-$TIMESTAMP.tar.gz"
 REMOTE_BACKUP_LOCATION="cmcg-backup/"
 BACKUP_TAR_FILENAME="backup-$TIMESTAMP.tar"
 
@@ -32,7 +33,8 @@ backup_ghost_content() {
     log "Running ghost backup..."
     cd $GHOST_DIR
 
-    expect wraith.exp
+    # expect wraith.exp
+    tar -czf $GHOST_CONTENT_BACKUP_FILENAME content
 }
 
 # check MySQL connection
@@ -69,7 +71,7 @@ rclone_to_cloud_storage() {
 
     rclone_remote_name="remote" # TODO: parse from config or prompt
 
-    tar -cvf $BACKUP_TAR_FILENAME backup-from-*-on-*.zip $GHOST_MYSQL_BACKUP_FILENAME
+    tar -cf $BACKUP_TAR_FILENAME $GHOST_CONTENT_BACKUP_FILENAME $GHOST_MYSQL_BACKUP_FILENAME
 
     # rclone copy backup-from-*-on-*.zip "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
     # rclone copy "$GHOST_MYSQL_BACKUP_FILENAME" "$rclone_remote_name:$REMOTE_BACKUP_LOCATION"
@@ -82,7 +84,7 @@ clean_up() {
     cd $GHOST_DIR
 
     rm -rf backup/
-    rm -f backup-from-*-on-*.zip
+    rm -f "$GHOST_CONTENT_BACKUP_FILENAME"
     rm -f "$GHOST_MYSQL_BACKUP_FILENAME"
     rm -f "$BACKUP_TAR_FILENAME"
 }
