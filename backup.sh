@@ -25,7 +25,7 @@ pre_backup_checks() {
     for c in "${cli[@]}"; do
         check_command_installation "$c"
     done
-    check_ghost_status
+    # check_ghost_status
 }
 
 # backup Ghost content folder

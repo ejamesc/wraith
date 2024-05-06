@@ -34,12 +34,12 @@ check: ## check if all requirements are installed.
 setup: check	## setup rclone, ghost backup, and cron.
 	@echo "Configuring rlcone..."
 	@rclone config
-	@echo "Setting up wraith..."
-	@cp wraith.example.exp /var/www/ghost/wraith.exp
-	@echo "Setting up a cron job to run at 04:00 on Monday..."
+	# @echo "Setting up wraith..."
+	# @cp wraith.example.exp /var/www/ghost/wraith.exp
+	@echo "Setting up a cron job to run at 02:00 every day..."
 	@(crontab -l 2>/dev/null; echo "0 2 * * * cd ~/backup/ && USER=deploy bash backup.sh > /tmp/wraith.log") | crontab -
 	@echo "To run crontab -e to update the backup Cron schedule."
-	@echo "Last action required: update the email and password field in wraith.exp for ghost backup to work."
+	# @echo "Last action required: update the email and password field in wraith.exp for ghost backup to work."
 
 .PHONY: backup
 backup:	## run backup script.
