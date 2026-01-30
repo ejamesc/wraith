@@ -11,11 +11,17 @@ GHOST_CONTENT_BACKUP_FILENAME="content-$TIMESTAMP.tar.gz"
 REMOTE_BACKUP_LOCATION="cmcg-backup/"
 BACKUP_TAR_FILENAME="backup-$TIMESTAMP.tar"
 
+# MySQL connection variables in global scope
+mysql_host=""
+mysql_user=""
+mysql_password=""
+mysql_database=""
+
 # run checks
 pre_backup_checks() {
     if [ ! -d "$GHOST_DIR" ]; then
         log "Ghost directory does not exist"
-        exit 0
+        exit 1
     fi
 
     log "Running pre-backup checks"
@@ -42,7 +48,7 @@ check_mysql_connection() {
     log "Checking MySQL connection..."
     if ! mysql -h"$mysql_host" -u"$mysql_user" -p"$mysql_password" -e ";" &>/dev/null; then
         log "Could not connect to MySQL"
-        exit 0
+        exit 1
     fi
     log "MySQL connection OK"
 }
@@ -92,6 +98,10 @@ clean_up() {
 # main entrypoint of the script
 main() {
     log "Welcome to wraith"
+
+    # Ensure cleanup runs on exit, error, or interrupt
+    trap clean_up EXIT
+
     pre_backup_checks
     clean_up
     backup_ghost_content

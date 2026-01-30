@@ -9,7 +9,7 @@ log() {
 check_command_installation() {
     if ! command -v $1 &>/dev/null; then
         log "$1 is not installed"
-        exit 0
+        exit 1
     fi
 }
 
@@ -17,6 +17,6 @@ check_command_installation() {
 check_ghost_status() {
     if ! ghost status &>/dev/null; then
         log "Ghost is not running"
-        exit 0
+        exit 1
     fi
 }
